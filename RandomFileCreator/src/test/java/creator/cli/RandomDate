@@ -1,0 +1,27 @@
+package creator.cli;
+
+import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class RandomDate {
+	@Test
+	public void random_date() {
+		Calendar s = Calendar.getInstance();
+		s.set(Calendar.DAY_OF_MONTH, 1);
+		s.set(1900, Calendar.JANUARY, 1);
+		Calendar e = Calendar.getInstance();
+		e.set(2025, Calendar.DECEMBER, 31);
+
+		long startSeconds = s.toInstant().getEpochSecond();
+		long endSeconds = e.toInstant().getEpochSecond();
+		long random = ThreadLocalRandom
+			.current()
+			.nextLong(startSeconds, endSeconds);
+
+		System.out.println(Instant.ofEpochSecond(random));
+	}
+}
