@@ -1,0 +1,395 @@
+package creator.cli;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
+public class FileCreator {
+	/* File create router */
+	public static boolean createFile(FileCreateParameter parameter) throws Exception {
+
+		boolean flag = false;
+		switch (parameter.type) {
+			case CSV: flag = createCSVFile(parameter); break;
+			case TAB: flag = createTABFile(parameter); break;
+			case PIPE: flag = createPIPEFile(parameter); break;
+			case EXCEL: flag = createExcelFile(parameter); break;
+		}
+
+		return flag;
+	}
+
+	public static boolean createExcelFile(FileCreateParameter parameter) throws Exception {
+		System.out.println("### creating excel file");
+		String fileName = parameter.getName();
+
+		if (!fileName.endsWith(".xlsx"))
+			fileName += ".xlsx";
+
+
+		/* Create new CSV file */
+		File file = new File(fileName);
+
+		if (file.exists()) {
+			throw new Exception("File already present!");
+		}
+
+		boolean flag = file.createNewFile();
+
+		if (!flag) {
+			throw new Exception("Not able to create file");
+		}
+
+		// append random column if required
+		parameter.fixColumnCount();
+
+		writeDataToExcelFile(parameter, file);
+
+		return true;
+	}
+
+	public static boolean createCSVFile(FileCreateParameter parameter) throws Exception {
+		System.out.println("### creating csv file");
+		String fileName = parameter.getName();
+
+		if (!fileName.endsWith(".csv"))
+			fileName += ".csv";
+
+
+		/* Create new CSV file */
+		File file = new File(fileName);
+
+		if (file.exists()) {
+			throw new Exception("File already present!");
+		}
+
+		boolean flag = file.createNewFile();
+
+		if (!flag) {
+			throw new Exception("Not able to create file");
+		}
+
+		parameter.fixColumnCount();
+
+
+		System.out.println("### Column Details List");
+		parameter.columnList.forEach(c->{
+			System.out.println("#name : " + c.getName() + ":" + c.getType().name());
+		});
+
+		writeDataToFile(parameter, file, ',');
+
+		return true;
+	}
+
+	public static boolean createPIPEFile(FileCreateParameter parameter) throws Exception {
+		System.out.println("### creating csv file");
+		String fileName = parameter.getName();
+
+		if (!fileName.endsWith(".psv"))
+			fileName += ".psv";
+
+
+		/* Create new CSV file */
+		File file = new File(fileName);
+
+		if (file.exists()) {
+			throw new Exception("File already present!");
+		}
+
+		boolean flag = file.createNewFile();
+
+		if (!flag) {
+			throw new Exception("Not able to create file");
+		}
+
+		parameter.fixColumnCount();
+
+
+		writeDataToFile(parameter, file, '|');
+		return true;
+	}
+
+	public static boolean createTABFile(FileCreateParameter parameter) throws Exception {
+		System.out.println("### creating csv file");
+		String fileName = parameter.getName();
+
+		if (!fileName.endsWith(".tsv"))
+			fileName += ".tsv";
+
+
+		/* Create new CSV file */
+		File file = new File(fileName);
+
+		if (file.exists()) {
+			throw new Exception("File already present!");
+		}
+
+		boolean flag = file.createNewFile();
+
+		if (!flag) {
+			throw new Exception("Not able to create file");
+		}
+
+		parameter.fixColumnCount();
+
+
+		writeDataToFile(parameter, file, '\t');
+
+		return true;
+	}
+
+	private static void writeDataToFile(FileCreateParameter parameter, File file, char delimited) throws Exception {
+		FileWriter fileWriter = new FileWriter(file);
+		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+		StringBuilder sb = new StringBuilder();
+
+		/* Insert header */
+		for (ColumnDetails columnDetails : parameter.columnList) {
+			sb.append(columnDetails.getName()).append(delimited);
+		}
+
+		sb.setCharAt(sb.length()-1, '\n');
+
+		bufferedWriter.write(sb.toString());
+
+		/* clear string builder */
+		sb = new StringBuilder();
+
+		/* for loop through row */
+		for (long i = 0L; i < parameter.getRecords(); i++) {
+
+			/* for loop through header */
+			for (ColumnDetails c : parameter.columnList) {
+				switch (c.getType()) {
+					case DATE:
+						//sb.append(RandomGenerator.randomDate()).append(delimited); break;
+						bufferedWriter.write(RandomGenerator.randomDate().toString() + delimited); break;
+					case STRING:
+						bufferedWriter.write(RandomGenerator.generateRandomString(20) + delimited); break;
+						//sb.append(RandomGenerator.generateRandomString(20)).append(delimited); break;
+					case NUMBER:
+						bufferedWriter.write(RandomGenerator.randomNumber().toString() + delimited); break;
+						//sb.append(RandomGenerator.randomNumber()).append(delimited);
+				}
+			}
+			bufferedWriter.write('\n');
+			//sb.setCharAt(sb.length()-1, '\n');
+		}
+		//bufferedWriter.write(sb.toString());
+
+		bufferedWriter.close();
+		fileWriter.close();
+	}
+
+	private static void writeDataToExcelFile(FileCreateParameter parameter, File file) throws IOException {
+		Workbook workbook = new HSSFWorkbook();
+
+
+		// create sheet with random name
+		Sheet defaultSheet = workbook.createSheet("sheet_" + RandomGenerator.generateRandomString(5));
+
+		// insert header
+		Row header = defaultSheet.createRow(0);
+		for (int j = 0; j < parameter.getHeaders().size(); j++) {
+			Cell c = header.createCell(j);
+			c.setCellValue(parameter.getHeaders().get(j));
+		}
+
+		for (int i = 1; i < parameter.getRecords(); i++) {
+
+			Row row = defaultSheet.createRow(i);
+
+			for (int j = 0; j < parameter.getColumns(); j++) {
+				Cell c = row.createCell(j);
+				c.setCellValue(RandomGenerator.generateRandomString(20));
+			}
+		}
+
+		OutputStream outputStream = Files.newOutputStream(file.toPath());
+		workbook.write(outputStream);
+		outputStream.close();
+		workbook.close();
+	}
+
+	public static class FileCreateParameter {
+		private List<String> dataTypes = Arrays.asList(
+			"number",
+			"date",
+			"string"
+		);
+		Random random = new Random();
+
+		public enum FileType {
+			EXCEL,
+			TAB,
+			CSV,
+			PIPE
+		};
+
+		FileType type;
+		long records = 1000;
+		int columns = 1;
+
+		String name;
+
+		//LinkedHashMap<String, String> headerAndType = new LinkedHashMap<>();
+
+		List<ColumnDetails> columnList = new ArrayList<>();
+
+		public void addHeaders(String[] headers) {
+
+			// find Data Type
+			for (String header : headers) {
+				ColumnDetails columnDetails = new ColumnDetails();
+				ColumnDetails.ColumnType t = null;
+				String[] columnNameAndDataType = header.split(":");
+
+				try {
+					t = ColumnDetails.ColumnType.of(columnNameAndDataType[1]);
+				}
+				catch (Exception e) {
+					int dataTypeRandom = random.nextInt(this.dataTypes.size());
+					t = ColumnDetails.ColumnType.of(this.dataTypes.get(dataTypeRandom));
+				}
+				columnDetails.setName(columnNameAndDataType[0]);
+				columnDetails.setType(t);
+				columnList.add(columnDetails);
+			}
+		}
+
+		public void setRecords(long records) {
+			this.records = records;
+		}
+
+		public void setType(FileType type) {
+			this.type = type;
+		}
+
+		public void setColumns(int columns) {
+			this.columns = columns;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public FileType getType() {
+			return type;
+		}
+
+		public long getRecords() {
+			return records;
+		}
+
+		public int getColumns() {
+			return this.columnList.size();
+		}
+
+		public void fixColumnCount() {
+			if (this.columnList.size()<columns) {
+
+				int createRandomColumnSize = columns - this.columnList.size();
+
+				for (int i = 0; i < createRandomColumnSize; i++) {
+					ColumnDetails columnDetails = new ColumnDetails();
+					String colName = "col_" + (i+1);
+
+					int typePosition = random.nextInt(this.dataTypes.size());
+					//this.headerAndType.put(colName, this.dataTypes.get(typePosition));
+					columnDetails.setName(colName);
+					try {
+						columnDetails.setType(ColumnDetails.ColumnType.of(this.dataTypes.get(typePosition)));
+					} catch (Exception e) {
+						columnDetails.setType(ColumnDetails.ColumnType.STRING);
+					}
+
+					this.columnList.add(columnDetails);
+				}
+				this.columns = this.columnList.size();
+			}
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public List<String> getHeaders() {
+			return
+				columnList.stream().map(ColumnDetails::getName).collect(Collectors.toList());
+		}
+	}
+
+	public static class RandomGenerator {
+		static Calendar s, e;
+
+		static long maxLength = 2000000;
+		static {
+			s = Calendar.getInstance();
+			s.set(1900, Calendar.JANUARY, 1);
+
+			e = Calendar.getInstance();
+			e.set(2025, Calendar.DECEMBER, 31);
+
+		}
+		public static String generateRandomString(int length) {
+			// create a string of all characters
+			String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+			// create random string builder
+			StringBuilder sb = new StringBuilder();
+
+			// create an object of Random class
+			Random random = new Random();
+
+			for(int i = 0; i < length; i++) {
+				// generate random index number
+				int index = random.nextInt(alphabet.length());
+
+				// get character specified by index
+				// from the string
+				char randomChar = alphabet.charAt(index);
+
+				// append the character to string builder
+				sb.append(randomChar);
+			}
+
+			return sb.toString();
+		}
+
+		public static Long randomNumber() {
+			return ThreadLocalRandom.current().nextLong(20000000);
+		}
+
+		public static Instant dateBetween(Instant startInclusive, Instant endExclusive) {
+			long startSeconds = startInclusive.getEpochSecond();
+			long endSeconds = endExclusive.getEpochSecond();
+			long random = ThreadLocalRandom
+				.current()
+				.nextLong(startSeconds, endSeconds);
+
+			return Instant.ofEpochSecond(random);
+		}
+
+		public static Instant randomDate() {
+			long startSeconds = s.toInstant().getEpochSecond();
+			long endSeconds = e.toInstant().getEpochSecond();
+			long random = ThreadLocalRandom
+				.current()
+				.nextLong(startSeconds, endSeconds);
+
+			return Instant.ofEpochSecond(random);
+		}
+
+	}
+}
