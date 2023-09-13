@@ -1,0 +1,125 @@
+package creator.cli;
+
+/**
+ * This class is used to accept argument from user to create Random file with Random Data
+ *  We are supporting CSV, EXCEL, TAB and PIPE delimited file
+ *  arguments:
+ *  -t - string : type of the file you want to create - excel, csv
+ *  -f - string : for file name
+ *  -h - string : column name with comma separated
+ *  -c - number : how many numbers of column do you want to create randomly
+ *  -r - number : how many record do you want to add in file
+ *  -l - to print info log
+ */
+public class RandomFileApplication {
+	public static void main(String[] args) {
+		ArgumentParser argumentParser = new ArgumentParser(args);
+
+		if ( argumentParser.parse()) {
+			System.err.println("### Argument Parse error");
+			System.exit(0);
+		}
+
+		String FILE_NAME = "";
+		int    NO_OF_RECORD = 100;
+		String FILE_TYPE = "";
+		boolean isLog = false;
+
+		FileCreator.FileCreateParameter createParameter = new FileCreator.FileCreateParameter();
+
+		/* Parse log */
+		isLog = argumentParser.isPresent("-l");
+
+		/* parse file type */
+		if ( !argumentParser.isPresent("-t")) {
+			if (isLog)
+				System.err.println("Please provide valid file type");
+
+			System.exit(0);
+		}else {
+			String type = argumentParser.getValue("-t").get(0);
+			FileCreator.FileCreateParameter.FileType t = null;
+			switch (type.toLowerCase()) {
+				case "excel":
+					t = FileCreator.FileCreateParameter.FileType.EXCEL; break;
+				case "csv":
+					t = FileCreator.FileCreateParameter.FileType.CSV; break;
+				case "tab":
+					t = FileCreator.FileCreateParameter.FileType.TAB; break;
+				case "pipe":
+					t = FileCreator.FileCreateParameter.FileType.PIPE; break;
+			}
+
+			if (t == null) {
+				System.err.println("### File type not supported, please provide valid file types");
+				System.out.println(" - csv, excel, pipe, tab");
+				System.exit(0);
+			}
+
+			createParameter.setType(t);
+		}
+
+		if ( !argumentParser.isPresent("-f")) {
+			if (isLog)
+				System.err.println("File name not provided");
+			createParameter.setName(FileCreator.RandomGenerator.generateRandomString(10));
+		} else {
+			createParameter.setName( argumentParser.getValue("-f").get(0) );
+		}
+
+		if ( argumentParser.isPresent("-h")) {
+			createParameter.addHeaders( argumentParser.getValue("-h").get(0).split(",") );
+		} else {
+			if (isLog)
+				System.err.println("Column header not provided, generating random column header");
+		}
+
+		if ( argumentParser.isPresent("-c")) {
+			try {
+				createParameter.setColumns( Integer.parseInt( argumentParser.getValue("-c").get(0)));
+			} catch (Exception e) {
+				if (isLog)
+					System.err.println("### Invalid column number provided");
+
+				// set default column
+				createParameter.setColumns(10);
+			}
+		} else {
+			if (isLog)
+				System.err.println("No of column not provided");
+		}
+
+		if (argumentParser.isPresent("-r")) {
+			try {
+				createParameter.setRecords( Long.parseLong( argumentParser.getValue("-r").get(0) ));
+			} catch (Exception e){
+				if (isLog)
+					System.err.println("### Invalid record number provided");
+
+				// set default row
+				createParameter.setRecords(100);
+			}
+		} else {
+			if (isLog)
+				System.err.println("No of record not provided");
+		}
+
+		long s = System.currentTimeMillis();
+		try {
+			// Create File according to parameter
+			boolean flag = FileCreator.createFile(createParameter);
+			if (!flag) {
+				System.err.println("### File create error!");
+				System.exit(0);
+			}
+		}
+		catch (Exception e) {
+			System.err.println("ERROR " + e.getMessage());
+			e.printStackTrace();
+		}
+
+		long e = System.currentTimeMillis();
+
+		System.out.println("Time taken : " + (e-s) + " ms");
+	}
+}
