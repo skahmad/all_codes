@@ -1,0 +1,39 @@
+package creator.cli;
+
+import org.junit.jupiter.api.Test;
+
+public class excel_limit_test {
+	@Test
+	public void create_file_with_row_65535() {
+		int row = 65535;
+		FileCreator.FileCreateParameter createParameter = new FileCreator.FileCreateParameter();
+		createParameter.setColumns(200);
+		createParameter.setName("excelFile" + System.currentTimeMillis());
+		createParameter.setType(FileCreator.FileCreateParameter.FileType.EXCEL);
+		createParameter.setRecords(row);
+
+		try {
+			FileCreator.createExcelFile(createParameter);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+
+	@Test
+	public void create_file_with_row_more_than_65535() {
+		int row = 65537;
+		FileCreator.FileCreateParameter createParameter = new FileCreator.FileCreateParameter();
+		createParameter.setColumns(2);
+		createParameter.setName("excelFile" + System.currentTimeMillis());
+		createParameter.setType(FileCreator.FileCreateParameter.FileType.EXCEL);
+		createParameter.setRecords(row);
+
+		try {
+			FileCreator.createExcelFile(createParameter);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+}
