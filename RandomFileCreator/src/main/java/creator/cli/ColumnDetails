@@ -1,0 +1,68 @@
+package creator.cli;
+
+public class ColumnDetails {
+	public enum ColumnType {
+		NUMBER("number"),
+		DATE("date"),
+		STRING("string");
+
+		private String type;
+
+		ColumnType(String type) {
+			this.type = type;
+		}
+
+		public static ColumnType of(String type) {
+			ColumnType _t = null;
+			for (ColumnType t : values()) {
+				if (type.toLowerCase().trim().equals(t.type)) {
+					_t = t;
+					break;
+				}
+			}
+			if(_t == null) {
+				throw new IllegalArgumentException("Invalid data type: " + type);
+			}
+			return _t;
+		}
+	};
+
+	private String name;
+	private ColumnType type;
+
+	private int min;
+	private int max;
+
+
+	public ColumnType getType() {
+		return type;
+	}
+
+	public int getMax() {
+		return max;
+	}
+
+	public int getMin() {
+		return min;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setType(ColumnType type) {
+		this.type = type;
+	}
+
+	public void setMin(int min) {
+		this.min = min;
+	}
+
+	public void setMax(int max) {
+		this.max = max;
+	}
+}
