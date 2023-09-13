@@ -1,0 +1,37 @@
+package creator.cli;
+
+import org.junit.jupiter.api.Test;
+
+public class CsvFileCreateTest {
+
+	/**
+	 *  -t - string : type of the file you want to create - csv, excel, pipe, tab
+	 *  -f - string : for file name
+	 *  -h - string : column name with comma separated
+	 *  -c - number : how many numbers of column do you want to create randomly
+	 *  -r - number : how many record do you want to add in file
+	 */
+	@Test
+	public void create_file_with_name_header_record() {
+		int record = 1000;
+		String name = "hello";
+		String headers = "name,age,gender";
+		String type = "csv";//""excel";
+
+		String[] args = new String[] {
+			"-t", type,
+			"-f", name,
+			"-r", String.valueOf(record),
+			"-h", headers,
+			"-l"
+		};
+
+		long s = System.currentTimeMillis();
+		// call main method to create csv file
+		RandomFileApplication.main(args);
+
+
+
+
+	}
+}
