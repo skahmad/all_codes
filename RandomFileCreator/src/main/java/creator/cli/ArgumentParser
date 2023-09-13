@@ -1,0 +1,64 @@
+package creator.cli;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ArgumentParser {
+	private final String[] actualArgs;
+
+	private Map<String, List<String>> argAndValues = new HashMap<>();
+	public ArgumentParser(String[] args) {
+		this.actualArgs = args;
+	}
+
+
+	public boolean parse() {
+		boolean flag = false;
+
+		boolean first = true;
+		List<String> valueTemp = new ArrayList<>();
+		String keyTemp = "";
+
+		for(String arg:this.actualArgs ) {
+			if (arg.startsWith("-")) {
+				if (!first) {
+					this.argAndValues.put(keyTemp, new ArrayList<>(valueTemp));
+					valueTemp.clear();
+				}
+				keyTemp = arg;
+			}else {
+				valueTemp.add(arg);
+				first = false;
+			}
+		}
+
+		this.argAndValues.put(keyTemp, new ArrayList<>(valueTemp));
+		return flag;
+	}
+
+	public void info() {
+		this.argAndValues.keySet().forEach(k->{
+			System.out.print(k + " : ");
+			this.argAndValues.get(k).forEach(s->{
+				System.out.print(s + ", ");
+			});
+			System.out.println("\n");
+		});
+	}
+
+	public List<String> getValue(String argShort) {
+		boolean found = this.argAndValues.containsKey(argShort);
+
+		if (!found) {
+			return new ArrayList<>();
+		}
+
+		return this.argAndValues.get(argShort);
+	}
+
+	public boolean isPresent(String argShort) {
+		return this.argAndValues.containsKey(argShort);
+	}
+}
